@@ -1,22 +1,33 @@
 const messageService = (function () {
     const messageStore = {
-        users: [],
+        currentUser: null,
         messageHistory: []
     };
+    const messageChannel = new BroadcastChannel('messageChannel');
     const messageSubscriptions = [];
     const userSubscriptions = [];
+    messageChannel.addEventListener('message', ({data}) => {
+        messageStore.messageHistory.push(data);
+        recallMessageSubscriptions();
+    })
+
+    function recallMessageSubscriptions() {
+        messageSubscriptions.map(callback => callback(messageStore))
+    }
 
     return {
+        getCurrentUser: () => messageStore.currentUser,
         authorize: (user) => {
-            messageStore.users.push(user);
-            userSubscriptions.map(callback => callback(messageStore.users))
+            messageStore.currentUser = user;
+            userSubscriptions.map(callback => callback(messageStore.currentUser))
         },
         userSubscription: (callback) => {
             userSubscriptions.push(callback);
         },
         send: (message) => {
-            messageStore.push(message);
-            messageSubscriptions.map(callback => callback(messageStore.messageHistory))
+            messageStore.messageHistory.push(message);
+            messageChannel.postMessage(new Message(messageStore.currentUser, message.message));
+            recallMessageSubscriptions()
 
         },
         subscribeOnMessages: (callback) => {
@@ -26,55 +37,80 @@ const messageService = (function () {
     }
 })();
 
-function massagerRender(root) {
+function Message(user, message) {
+    this.message = message;
+    this.user = user;
+}
 
-    const container = document.createElement('div');
-    container.classList.add('main');
-    const control = document.createElement('div');
-    control.classList.add('control');
-    const messages = document.createElement('div');
-    messages.classList.add('messages');
 
-    container.append(control);
-    container.append(messages);
-    root.innerHTML = '';
-    root.append(container)
+function rerenderMessages (messageHistory, messageContainer, currentUser) {
+    messageContainer.innerHTML = `${messageHistory.map((message) => messageBubbleRenderer(currentUser, message)).join('')}`
+}
+
+function messageBubbleRenderer(currentUser, {user, message}) {
+
+    return `<div class="message-bubble_${currentUser === user ? 'right' : 'left'}">
+        <div class="message-bubble__user">${user}:</div>
+        <div class="message-bubble__message">${message}</div>
+    </div>`
+}
+
+function messengerRender(root, messageService) {
+    const messageClass = 'message-container';
+    const inputMessageClass = 'message-area';
+    const submitButton = 'submit';
+
+    root.innerHTML = `<div class="main">
+        <div class="${messageClass}"></div>
+        <div class="control">
+            <textarea name="message" class="${inputMessageClass}"></textarea>
+            <input type="button" value="Submit" class="${submitButton}">
+        </div>
+    </div>`;
+
+    function sendMessage(message, messageService, textArea) {
+        messageService.send(new Message(
+            messageService.getCurrentUser(),
+            message
+        ))
+        textArea.value = '';
+    }
+
+    const messageContainer = root.querySelector(`.${messageClass}`);
+    const messageBody = root.querySelector(`.${inputMessageClass}`);
+    const submit = root.querySelector(`.${submitButton}`);
+
+
+
+    messageService.subscribeOnMessages(({messageHistory}) => rerenderMessages(messageHistory, messageContainer, messageService.getCurrentUser()))
+    submit.addEventListener('click', () => sendMessage(messageBody.value, messageService, messageBody))
+
 }
 
 function authorizeFormRender(root, messageService) {
-    root.innerHTML = '';
-    const authorizeForm = document.createElement('div');
-    authorizeForm.classList.add('authorize');
+    const submitButtonClass = 'submit-button';
+    const userInputClass = 'user-name';
 
-    const userNameInput = document.createElement('input');
-    userNameInput.setAttribute('type', 'text');
-    userNameInput.classList.add('user-name');
+    root.innerHTML = `<div class="authorize">
+        <label for="user-name" class="user-name__label">
+            User Name:
+            <input type="text" class="${userInputClass}" />
+        </label>
+        <input type="button" value="Submit" class="submit-button" />
+    </div>`;
 
-    const userNameLabel = document.createElement('label');
-    userNameLabel.append('User Name: ')
-    userNameLabel.append(userNameInput)
+    const submitButton = root.querySelector(`.${submitButtonClass}`);
+    const userInput = root.querySelector(`.${userInputClass}`);
 
-    const submitButton = document.createElement('input');
-    submitButton.setAttribute('type', 'button');
-    submitButton.setAttribute('value', 'Submit')
-
-    authorizeForm.append(userNameLabel);
-    authorizeForm.append(submitButton);
-    root.append(authorizeForm)
-
-    submitButton.addEventListener('click', () => {
-        messageService.authorize(userNameInput.value)
-    })
+    submitButton.addEventListener('click', () => messageService.authorize(userInput.value))
 }
 
 const application = (function({applicationClass = '', messageService}) {
     const root = document.querySelector(applicationClass);
 
-    function selectUserState(users = []) {
-            const isCanStartChat = users.length > 2;
-
-            if(isCanStartChat) {
-                massagerRender(root)
+    function selectUserState(user) {
+            if(user) {
+                messengerRender(root, messageService);
             } else {
                 authorizeFormRender(root, messageService);
             }
@@ -89,34 +125,3 @@ const application = (function({applicationClass = '', messageService}) {
 })({applicationClass: '.app', messageService})
 
 application.init();
-
-function paintMessages(messages) {
-    const messageContainer = document.querySelector('.messages');
-    messageContainer.innerHTML = null;
-
-    messages.map(message => {
-        const messageBubble = document.createElement('div');
-        messageBubble.innerHTML = message;
-        messageContainer.append(messageBubble)
-    })
-}
-
-messageService.subscribeOnMessages(paintMessages);
-
-const addButton = document.querySelector('.addButton');
-const messageBody = document.querySelector('.message-body');
-
-addButton.addEventListener('click', (event) => {
-    event.stopImmediatePropagation();
-    messageService.send(messageBody.value)
-    messageBody.value = null;
-})
-
-// < textarea
-// className = "message-body" > < /textarea>
-// <input type="button" className="addButton" value="Add message"/>
-
-// < div
-// className = "messages" > < /div>
-// <div className="control">
-// </div>
