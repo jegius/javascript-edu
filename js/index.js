@@ -27,6 +27,8 @@ function paintMessages(messages) {
     })
 }
 
+// hello, it's example changes
+
 messageService.subscribe(paintMessages);
 
 const addButton = document.querySelector('.addButton');
