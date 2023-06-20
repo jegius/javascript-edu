@@ -1,43 +1,85 @@
-const messageService = (function () {
+async function sendRequest(address, endpoint, body) {
+    const response = await fetch(`${address}/${endpoint}`, body);
+    return await response.json();
+}
+
+function carriedRequest(address, endpoint) {
+    return async (body) => await sendRequest(address, endpoint, body);
+}
+
+function updateMessage(newMessages, store) {
+    store.messageHistory = newMessages
+}
+
+function carriedStore(store) {
+    return (data) => updateMessage(data, store);
+}
+
+const messageService = (function (serverAddress) {
+    const POOLING_INTERVAL = 1000;
+    const MESSAGE_ENDPOINT = 'messages'
     const messageStore = {
         currentUser: null,
         messageHistory: []
     };
-    const messageChannel = new BroadcastChannel('messageChannel');
     const messageSubscriptions = [];
     const userSubscriptions = [];
-    messageChannel.addEventListener('message', ({data}) => {
-        messageStore.messageHistory.push(data);
-        recallMessageSubscriptions();
-    })
+
+    const carriedData = carriedRequest(serverAddress, MESSAGE_ENDPOINT);
 
     function recallMessageSubscriptions() {
         messageSubscriptions.map(callback => callback(messageStore))
     }
 
+    function recallUserSubscriptions() {
+        userSubscriptions.map(callback => callback(messageStore.currentUser))
+    }
+    const updateStore = carriedStore(messageStore);
+
+    async function getMessages() {
+        const messages = await carriedData();
+        updateStore(messages);
+        recallMessageSubscriptions();
+    }
+
+    async function sendMessages(message) {
+        const messages = await carriedData({
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(message)
+        });
+        updateStore(messages);
+        recallMessageSubscriptions();
+    }
+
+    setInterval(getMessages, POOLING_INTERVAL);
+
     return {
+        init: async () => {
+            await getMessages();
+        },
         getCurrentUser: () => messageStore.currentUser,
         authorize: (user) => {
             messageStore.currentUser = user;
-            userSubscriptions.map(callback => callback(messageStore.currentUser))
+            recallUserSubscriptions();
         },
         userSubscription: (callback) => {
             userSubscriptions.push(callback);
         },
-        send: (message) => {
-            messageStore.messageHistory.push(message);
-            messageChannel.postMessage(new Message(messageStore.currentUser, message.message));
-            recallMessageSubscriptions()
-
+        send: async (message) => {
+            await sendMessages(message)
         },
         subscribeOnMessages: (callback) => {
             messageSubscriptions.push(callback);
             callback(messageStore);
         }
     }
-})();
+})('http://localhost:3000');
 
-function Message(user, message) {
+function Message(id, user, message) {
+    this.id = id;
     this.message = message;
     this.user = user;
 }
@@ -70,6 +112,7 @@ function messengerRender(root, messageService) {
 
     function sendMessage(message, messageService, textArea) {
         messageService.send(new Message(
+            null,
             messageService.getCurrentUser(),
             message
         ))
@@ -119,6 +162,8 @@ const application = (function({applicationClass = '', messageService}) {
     return {
         init: () => {
             selectUserState();
+            messageService.init();
+
             messageService.userSubscription(selectUserState)
         },
     }
