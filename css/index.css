@@ -1,0 +1,71 @@
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.authorize {
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+    box-shadow: 0 0 0 .1rem #eee;
+    border-radius: .3rem;
+}
+
+.user-name__label {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: .5rem;
+}
+
+.message-container {
+    height: 20rem;
+    box-shadow: 0 0 0 .1rem #eee;
+    border-radius: .3rem;
+    margin-bottom: .5rem;
+    overflow-y: scroll;
+    width: 20rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.control {
+    box-shadow: 0 0 0 .1rem #eee;
+    margin-top: .5rem;
+    border-radius: .3rem;
+    width: 20rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.submit {
+    margin-top: .5rem;
+}
+
+.message-bubble_left {
+    align-self: flex-start;
+    background-color: #eee;
+}
+
+.message-bubble_right {
+    align-self: flex-end;
+    background-color: #69a2ea;
+    text-align: right;
+}
+
+.message-bubble_left, .message-bubble_right {
+    margin: .2rem;
+    padding: .2rem;
+    border-radius: .4rem;
+}
+
+
+.message-bubble__user {
+
+}
+
+.message-bubble__message {
+
+}
