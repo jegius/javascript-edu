@@ -20,6 +20,8 @@ export function authorizeFormRender(root, userService) {
 
     const submitButton = root.querySelector(`.${submitButtonClass}`);
     const userInput = root.querySelector(`.${userInputClass}`);
+    const createUserButton = null;
 
     submitButton.addEventListener('click', () => userService.authorize(userInput.value))
+    createUserButton?.addEventListener('click', () => userService.setIsNeedToCreate(true))
 }
