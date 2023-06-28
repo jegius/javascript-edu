@@ -6,7 +6,6 @@ export const userService = (function (serverAddress) {
     return {
         getCurrentUser: () => {},
         createUser: () => {},
-        cancel: () => {},
         isNeedToCreate: () => {},
         setIsNeedToCreate: () => {},
         authorize: (user) => {
