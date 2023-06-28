@@ -1,16 +1,17 @@
 import {messengerRender} from "./views/message.js";
 import {messageService} from "./services/messageService.js";
-import {authorizeFormRender} from "./views/authorization.js";
+import {userService} from "./services/userService.js";
+import {welcomePageRender} from "./views/welcomeScreen.js";
 
 
-export const application = (function({applicationClass = '', messageService}) {
+export const application = (function({applicationClass = '', messageService, userService}) {
     const root = document.querySelector(applicationClass);
 
     function selectUserState(user) {
         if(user) {
-            messengerRender(root, messageService);
+            messengerRender(root, messageService, userService);
         } else {
-            authorizeFormRender(root, messageService);
+            welcomePageRender(root, userService);
         }
     }
 
@@ -18,8 +19,8 @@ export const application = (function({applicationClass = '', messageService}) {
         init: () => {
             selectUserState();
             messageService.init();
-
-            messageService.userSubscription(selectUserState)
+            userService.init();
+            userService.subscribeOnUserState(selectUserState)
         },
     }
-})({applicationClass: '.app', messageService})
+})({applicationClass: '.app', messageService, userService})

@@ -1,4 +1,5 @@
 import {Message} from "../model/model.js";
+import {usersInChatRenderer} from "./usersInChat.js";
 
 export function messageBubbleRenderer(currentUser, {user, message}) {
 
@@ -8,12 +9,13 @@ export function messageBubbleRenderer(currentUser, {user, message}) {
     </div>`
 }
 
-export function messengerRender(root, messageService) {
+export function messengerRender(root, messageService, userService) {
     const messageClass = 'message-container';
     const inputMessageClass = 'message-area';
     const submitButton = 'submit';
 
     root.innerHTML = `<div class="main">
+        ${usersInChatRenderer(root, userService)}
         <div class="${messageClass}"></div>
         <div class="control">
             <textarea name="message" class="${inputMessageClass}"></textarea>
@@ -24,7 +26,7 @@ export function messengerRender(root, messageService) {
     function sendMessage(message, messageService, textArea) {
         messageService.send(new Message(
             null,
-            messageService.getCurrentUser(),
+            userService.getCurrentUser(),
             message
         ))
         textArea.value = '';

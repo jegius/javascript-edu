@@ -1,4 +1,5 @@
 import {carriedRequest, carriedStore} from "../utils/utils.js";
+import {API_URL} from "../consts.js";
 
 export const messageService = (function (serverAddress) {
     const POOLING_INTERVAL = 1000;
@@ -8,7 +9,6 @@ export const messageService = (function (serverAddress) {
         messageHistory: []
     };
     const messageSubscriptions = [];
-    const userSubscriptions = [];
 
     const carriedData = carriedRequest(serverAddress, MESSAGE_ENDPOINT);
 
@@ -16,9 +16,6 @@ export const messageService = (function (serverAddress) {
         messageSubscriptions.map(callback => callback(messageStore))
     }
 
-    function recallUserSubscriptions() {
-        userSubscriptions.map(callback => callback(messageStore.currentUser))
-    }
     const updateStore = carriedStore(messageStore);
 
     async function getMessages() {
@@ -45,14 +42,6 @@ export const messageService = (function (serverAddress) {
         init: async () => {
             await getMessages();
         },
-        getCurrentUser: () => messageStore.currentUser,
-        authorize: (user) => {
-            messageStore.currentUser = user;
-            recallUserSubscriptions();
-        },
-        userSubscription: (callback) => {
-            userSubscriptions.push(callback);
-        },
         send: async (message) => {
             await sendMessages(message)
         },
@@ -61,4 +50,4 @@ export const messageService = (function (serverAddress) {
             callback(messageStore);
         }
     }
-})('http://localhost:3000');
+})(API_URL);
