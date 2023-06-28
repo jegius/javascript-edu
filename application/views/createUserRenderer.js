@@ -27,5 +27,5 @@ export function createUserRenderer(root, userService) {
     const userInput = root.querySelector(`.${userInputClass}`);
 
     submitButton.addEventListener('click', () => userService.createUser())
-    cancelButton?.addEventListener('click', () => userService.cancel())
+    cancelButton?.addEventListener('click', () => userService.setIsNeedToCreate(false))
 }

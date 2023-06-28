@@ -8,6 +8,7 @@ export const userService = (function (serverAddress) {
         createUser: () => {},
         cancel: () => {},
         isNeedToCreate: () => {},
+        setIsNeedToCreate: () => {},
         authorize: (user) => {
         },
         subscribeOnUserState: (callback) => {}
